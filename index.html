@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imghr</title>
+    <link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://npm.elemecdn.com/lxgw-wenkai-webfont@1.6.0/lxgwwenkai-bold.css">
+    <style>
+        :root {
+            --primary-blue: #0d6efd;
+            --light-blue: #e7f1ff;
+        }
+        
+        body {
+            font-family: LXGW Wenkai, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: var(--primary-blue);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: var(--primary-blue);
+            font-size: 1.2rem;
+            margin: 25px 0 10px 0;
+        }
+
+        .d-none {
+            display: none;
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--primary-blue);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .file-upload-area:hover {
+            background-color: var(--light-blue);
+        }
+        
+        .file-upload-area i {
+            font-size: 36px;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        
+        .file-name {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+        }
+        
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #888;
+            border-radius: 4px;
+            background: white;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #333;
+        }
+        
+        .url-box {
+            margin-top: 15px;
+        }
+        
+        .url-box input, .code-example input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .preview-img {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 4px;
+            display: block;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--light-blue);
+            border-top: 5px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .notice {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        
+        .code-example {
+            margin-top: 15px;
+        }
+        
+        .code-example h4 {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .upload-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-btn:hover {
+            background: #0b5ed7;
+        }
+    </style>
+</head>
+<body>
+    <h1><i class="fas fa-cloud-upload-alt"></i> Imghr</h1>
+    <hr>
+    <h2><i class="fas fa-search"></i> 选择接口</h2>
+    <select id="apiSelect">
+        <option value="huaban">一号</option>
+        <option value="sohu">二号</option>
+        <option value="chaoxing">三号</option>
+        <option value="cbern">四号（不支持本页预览）</option>
+        <option value="alibaba">五号（不支持PNG）</option>
+        <option value="you163">六号</option>
+        <option value="58pic">七号</option>
+        <option value="360">八号（不支持PNG）</option>
+    </select>  
+    <h2><i class="fas fa-folder"></i> 选择文件</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="file-upload-area" id="dropArea">
+            <i class="fas fa-file" id="uploadIcon"></i>
+            <p id="uploadText">点击选择文件 / 拖放文件到此处</p>
+            <span class="file-name" id="fileName">未选择文件</span>
+        </div>
+        <input type="file" name="file" id="file" class="d-none">
+        <button type="submit" class="upload-btn" id="uploadBtn" style="display: none;">
+            <i class="fas fa-upload"></i> 上传图片
+        </button>
+    </form>
+    <h2><i class="fas fa-image"></i> 上传结果</h2>
+    <div id="imgup">
+        <p style="color: #808080; text-align: center;">暂无图片</p>
+    </div>
+    
+    <div class="notice">
+        <p><i class="fas fa-exclamation-circle"></i> 请勿上传违法图片！请勿重复上传同一图片！<br><br>图片大小最好不要超过1MB，否则上传速度很慢，建议压缩画质后上传！<br><br>接口失效请反馈至邮箱：v@owo.ee</p>
+    </div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="toast" id="toast">已复制</div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('#dropArea').click(function() {
+                $('#file').click();
+            });
+            
+            $('#file').change(function() {
+                const fileName = $(this).val().split('\\').pop();
+                if (fileName) {
+                    $('#fileName').text(fileName);
+                    $('#uploadBtn').show();
+                    $('#uploadText').text('点击下方按钮上传');
+                    $('#uploadIcon').removeClass('fa-cloud-upload-alt').addClass('fa-upload');
+                } else {
+                    $('#fileName').text('未选择文件');
+                    $('#uploadBtn').hide();
+                    $('#uploadText').text('点击选择文件 / 拖放文件到此处');
+                    $('#uploadIcon').removeClass('fa-upload').addClass('fa-cloud-upload-alt');
+                }
+            });
+            
+            const dropArea = document.getElementById('dropArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.backgroundColor = 'var(--light-blue)';
+            }
+            
+            function unhighlight() {
+                dropArea.style.backgroundColor = '';
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    $('#file').prop('files', files);
+                    $('#fileName').text(files[0].name);
+                    $('#uploadBtn').show();
+                    $('#uploadText').text('点击下方按钮上传');
+                    $('#uploadIcon').removeClass('fa-cloud-upload-alt').addClass('fa-upload');
+                }
+            }
+            
+            $('#uploadForm').submit(function(event) {
+                event.preventDefault();
+                const apiType = $('#apiSelect').val();
+                const baseUrl = 'https://api.ilingku.com/int/v1/image.';
+                
+                $('#loadingOverlay').css('display', 'flex');
+                
+                var formData = new FormData(this);
+                $.ajax({
+                    url: baseUrl + apiType,
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if(response.code == 200) {
+                            const imgUrl = response.url;
+                            
+                            $("#imgup").html(`
+                                <p style="color: var(--primary-blue);">
+                                    <i class="fas fa-check"></i> 上传成功！
+                                </p>
+                                <img src="${imgUrl}" class="preview-img">
+                                <div class="url-box">
+                                    <input type="text" value="${imgUrl}" readonly>
+                                </div>
+                                <div class="code-example">
+                                    <h4>Markdown:</h4>
+                                    <input type="text" value="![image](${imgUrl})" readonly>
+                                    <h4>HTML:</h4>
+                                    <input type="text" value='&lt;img src="${imgUrl}"&gt;' readonly>
+                                </div>
+                            `);
+                            
+                            $(".url-box input, .code-example input").click(function() {
+                                $(this).select();
+                                document.execCommand("copy");
+                                showToast("已复制");
+                            });
+                        } else {
+                            $("#imgup").html(`
+                                <p style="color: #dc3545;">
+                                    <i class="fas fa-times"></i> 上传失败: ${response.msg || '未知错误'}
+                                </p>
+                            `);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $("#imgup").html(`
+                            <p style="color: #dc3545;">
+                                <i class="fas fa-times"></i> 上传失败: ${error || '网络错误'}
+                            </p>
+                        `);
+                    },
+                    complete: function() {
+                        $('#loadingOverlay').hide();
+                    }
+                });
+            });
+            
+            function showToast(message) {
+                const toast = $("#toast");
+                toast.text(message).addClass("show");
+                setTimeout(() => toast.removeClass("show"), 1500);
+            }
+        });
+    </script>
+</body>
+</html>
